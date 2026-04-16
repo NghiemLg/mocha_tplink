@@ -1,0 +1,54 @@
+ground_robot:
+  # Jackal - LiDAR + Odometry + TF (dùng cho LRAE planner)
+  - msg_topic: "/mid/points"
+    msg_type: "sensor_msgs/PointCloud2"
+    msg_priority: "NO_PRIORITY"
+    msg_history: "LAST_MESSAGE"
+
+  - msg_topic: "/odometry/filtered"
+    msg_type: "nav_msgs/Odometry"
+    msg_priority: "HIGH_PRIORITY"
+    msg_history: "LAST_MESSAGE"
+
+  - msg_topic: "/tf"
+    msg_type: "tf2_msgs/TFMessage"
+    msg_priority: "HIGH_PRIORITY"
+    msg_history: "LAST_MESSAGE"
+
+  - msg_topic: "/tf_static"
+    msg_type: "tf2_msgs/TFMessage"
+    msg_priority: "HIGH_PRIORITY"
+    msg_history: "LAST_MESSAGE"
+
+
+aerial_robot:
+  # Iris - Realsense Depth + Mavros (dùng cho EDEN planner)
+
+
+  - msg_topic: "/tf"
+    msg_type: "tf2_msgs/TFMessage"
+    msg_priority: "HIGH_PRIORITY"
+    msg_history: "LAST_MESSAGE"
+
+  - msg_topic: "/tf_static"
+    msg_type: "tf2_msgs/TFMessage"
+    msg_priority: "HIGH_PRIORITY"
+    msg_history: "LAST_MESSAGE"
+
+  - msg_topic: "/mavros/imu/data"
+    msg_type: "sensor_msgs/Imu"
+    msg_priority: "HIGH_PRIORITY"
+    msg_history: "LAST_MESSAGE"
+
+  - msg_topic: "/velodyne_points"
+    msg_type: "sensor_msgs/PointCloud2"
+    msg_priority: "NO_PRIORITY"
+    msg_history: "LAST_MESSAGE"
+
+
+
+base_station:
+  - msg_topic: "/target_goals"
+    msg_type: "geometry_msgs/PoseArray"
+    msg_priority: "HIGH_PRIORITY"
+    msg_history: "LAST_MESSAGE"

@@ -1,0 +1,5 @@
+lib
+target
+*.xml
+*.jar
+*.java

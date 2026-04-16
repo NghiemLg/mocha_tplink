@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <!-- ====================== ARGUMENTS ====================== -->
+  <arg name="robot_name" default="none_iris" />
+  <arg name="robot_configs" default="$(find mocha_core)/config/robot_configs.yaml" />
+  <arg name="topic_configs" default="$(find mocha_core)/config/topic_configs.yaml" />
+  <arg name="radio_configs" default="$(find mocha_core)/config/radio_configs.yaml" />
+  <arg name="output" default="screen" />
+  <arg name="vehicle_sdf" value="tarot" />
+  <!-- ====================== PX4 SITL + GAZEBO (UAV) ====================== -->
+  <!-- Khởi động PX4 SITL + Gazebo Classic 11 + none_iris_3d_lidar -->
+  <include file="$(find geometric_controller)/launch/mavros_posix_sitl.launch">
+    <!-- ====================== TẮT LỖI COMPRESSED DEPTH (rgb8) ====================== -->
+    <!-- Tắt compressed depth transport để tránh lỗi rgb8 -->
+    <node name="disable_compressed_depth"
+      pkg="image_transport"
+      type="republish"
+      args="in:=/camera/depth/image_raw raw out:=/camera/depth/image_raw _image_transport:=raw"
+      output="screen" />
+
+
+    <arg name="gui" value="true" />
+    <!-- <arg name="world"   value="$(find mocha_core)/worlds/your_world.world"/> -->
+  </include>
+
+  <node pkg="tf2_ros" type="static_transform_publisher" name="iris_base_to_laser" output="screen"
+    args="0 0 0 -1.5708 0 -1.5708 base_link laser_3d" />
+
+  <!-- ====================== DELAY TRƯỚC MOCHA ====================== -->
+  <!-- Đợi Gazebo + Realsense + PX4 + MAVROS khởi tạo xong hoàn toàn -->
+  <!-- Đặc biệt quan trọng khi gui:=false -->
+  <!-- <node name="delay_mocha" 
+        pkg="rostopic" 
+        type="rostopic" 
+        args="pub /delay/done std_msgs/Empty '{}'" 
+        launch-prefix="sleep 20"/> -->
+  <!-- ====================== MOCHA STACK =============================================================================================================================== -->
+  <!-- Launch database, publishers and translators -->
+  <include file="$(find mocha_core)/launch/database_translators_publishers.launch"
+    pass_all_args="True" />
+
+  <!-- Launch FAKE RSSI (for testing without real TPLINK radio) -->
+  <node pkg="mocha_core" type="fake_rssi.py" name="fake_rssi" output="screen" />
+
+  <!-- Launch tplink interface (nếu đang dùng) -->
+  <!-- <include file="$(find interface_tplink)/launch/tplink_nodes.launch" pass_all_args="True"/> -->
+
+</launch>

@@ -1,0 +1,4 @@
+dummy:
+  SN: "SIM-00000"
+  MAC-address: ["00:00:00:00:00:00"]
+  computed-IP-address: "127.0.0.1"

@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <!-- ====================== ARGUMENTS ====================== -->
+  <!-- robot_name vẫn giữ để MOCHA database + translators namespace đúng -->
+  <arg name="robot_name"      default="jackal"/>
+  <arg name="x"               default="2.0"/>
+  <arg name="y"               default="0.0"/>
+  <arg name="z"               default="0.5"/>
+  <arg name="yaw"             default="0.0"/>
+  <arg name="joystick"        default="false"/>
+
+  <arg name="robot_configs"   default="$(find mocha_core)/config/robot_configs.yaml"/>
+  <arg name="topic_configs"   default="$(find mocha_core)/config/topic_configs.yaml"/>
+  <arg name="radio_configs"   default="$(find mocha_core)/config/radio_configs.yaml"/>
+  <arg name="output"          default="screen"/>
+
+  <!-- ====================== 1. SPAWN JACKAL ====================== -->
+  <!-- Must run with: JACKAL_LASER_3D=1 roslaunch mocha_launch jackal.launch -->
+  <include file="$(find jackal_gazebo)/launch/spawn_jackal.launch">
+    <arg name="x"          value="$(arg x)"/>
+    <arg name="y"          value="$(arg y)"/>
+    <arg name="z"          value="$(arg z)"/>
+    <arg name="yaw"        value="$(arg yaw)"/>
+    <arg name="joystick"   value="$(arg joystick)"/>
+  </include>
+
+  <!-- ====================== 2. MOCHA STACK ====================== -->
+  <!-- MOCHA vẫn dùng robot_name="jackal" để namespace topics đúng -->
+  <include file="$(find mocha_core)/launch/database_translators_publishers.launch" pass_all_args="True"/>
+
+  <!-- Launch FAKE RSSI (for testing without real TPLINK radio) -->
+  <node pkg="mocha_core" type="fake_rssi.py" name="fake_rssi" output="screen"/>
+
+  <!-- Tplink (nếu bạn đang dùng) -->
+  <!-- <include file="$(find interface_tplink)/launch/tplink_nodes.launch" pass_all_args="True"/> -->
+
+</launch>
