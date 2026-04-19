@@ -1,4 +1,11 @@
-dummy:
-  SN: "SIM-00000"
-  MAC-address: ["00:00:00:00:00:00"]
-  computed-IP-address: "127.0.0.1"
+radio_base:
+        MAC-address: ["04:f0:21:38:cf:5b"]
+        computed-IP-address: "10.229.221.1"
+
+radio_ugv:
+        MAC-address: ["04:f0:21:38:d3:be"]
+        computed-IP-address: "10.229.222.1"
+    
+radio_uav:
+        MAC-address: ["cc:2d:e0:9b:3e:aa"]
+        computed-IP-address: "10.249.171.1"

@@ -262,10 +262,51 @@ class Bistable():
 # - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 # Channel class
 
+def _build_latest_topic_ids(robot_configs, topic_configs, robot_name):
+    """Build the set of topic IDs that should use LAST_MESSAGE behaviour.
+
+    Reads msg_history from topic_configs for the node type of `robot_name`.
+    Returns a set of integer topic IDs whose msg_history == "LAST_MESSAGE".
+    Topics with msg_history == "WHOLE_HISTORY" (or any other value) will NOT
+    be in the returned set, meaning all their headers will be advertised during
+    GHEAD instead of only the newest one.
+
+    Args:
+        robot_configs (dict): Robot configuration dictionary.
+        topic_configs (dict): Topic configuration dictionary.
+        robot_name (str): Name of this robot.
+
+    Returns:
+        set[int]: Topic IDs that should use LAST_MESSAGE filtering.
+    """
+    node_type = robot_configs[robot_name]["node-type"]
+    topic_list = topic_configs.get(node_type, [])
+    latest_ids = set()
+    for idx, topic in enumerate(topic_list):
+        # Default to LAST_MESSAGE when the field is absent so that behaviour
+        # is unchanged for configs that have not yet been updated.
+        msg_history = topic.get("msg_history", "LAST_MESSAGE")
+        if msg_history == "LAST_MESSAGE":
+            latest_ids.add(idx)
+        # WHOLE_HISTORY → not added; all headers will be included for this topic
+    return latest_ids
+
+
 class Channel():
     def __init__(self, dbl, this_robot,
                  target_robot, robot_configs,
-                 client_timeout):
+                 client_timeout, topic_configs=None):
+        """
+        Args:
+            dbl: DBwLock instance.
+            this_robot (str): Name of this robot.
+            target_robot (str): Name of the peer robot.
+            robot_configs (dict): Robot configuration dictionary.
+            client_timeout (float|int): Communication timeout in seconds.
+            topic_configs (dict, optional): Topic configuration dictionary.
+                When provided, msg_history per topic is respected in GHEAD.
+                When None, all topics fall back to LAST_MESSAGE (legacy behaviour).
+        """
         # Check input arguments
         assert type(dbl) is db.DBwLock
         assert type(this_robot) is str
@@ -283,11 +324,31 @@ class Channel():
         self.this_robot = this_robot
         self.target_robot = target_robot
         self.dbl = dbl
+
         # Config file used to fetch configurations
         self.robot_configs = robot_configs
 
         # Client timeout defines the time before an answer is considered lost
         self.client_timeout = client_timeout
+
+        # ------------------------------------------------------------------
+        # Per-topic msg_history configuration
+        # ------------------------------------------------------------------
+        # latest_topic_ids: set of topic IDs that use LAST_MESSAGE semantics.
+        # All other topic IDs use WHOLE_HISTORY (all headers advertised).
+        # When topic_configs is not provided we fall back to the legacy
+        # behaviour of treating every topic as LAST_MESSAGE.
+        if topic_configs is not None:
+            self.latest_topic_ids = _build_latest_topic_ids(
+                robot_configs, topic_configs, this_robot)
+            rospy.loginfo(
+                f"{this_robot} - Channel - LAST_MESSAGE topic IDs: "
+                f"{self.latest_topic_ids}"
+            )
+        else:
+            # Legacy fallback: filter_latest=True for the whole DB
+            self.latest_topic_ids = None
+        # ------------------------------------------------------------------
 
         # Bistable used to start the synchronization. It will be enabled
         # by self.start_sync(), and it will be disabled inside the state
@@ -396,7 +457,6 @@ class Channel():
         self.sm_shutdown.set()
         self.th.join()
 
-
     def sm_thread(self):
         # Start the state machine and wait until it ends
         rospy.logwarn(f"Channel {self.this_robot} -> {self.target_robot} started")
@@ -431,18 +491,56 @@ class Channel():
         self.client_answer = msg
 
     def callback_server(self, msg):
+        """Server-side handler for incoming ZMQ messages.
+
+        GHEAD handling is the only part that changed from the original.
+
+        Original behaviour (bug):
+            headers = self.dbl.get_header_list(filter_latest=True)
+            → Always returned only the newest header per topic, regardless of
+              the msg_history field in topic_configs. This caused all older
+              keyframes to be invisible to peers.
+
+        New behaviour:
+            - Topics with msg_history == "LAST_MESSAGE" (pose, goal, …):
+              only the latest header is advertised (same as before).
+            - Topics with msg_history == "WHOLE_HISTORY" (lidar_keyframes, …):
+              ALL headers are advertised so the peer can request every keyframe
+              it has not yet received.
+            - If topic_configs was not provided to Channel (legacy), we fall
+              back to filter_latest=True for the whole DB.
+        """
         rospy.logdebug(f"{self.this_robot} - Channel - CALLBACK_SERVER: {msg}")
         header = msg[:CODE_LENGTH].decode()
         data = msg[CODE_LENGTH:]
 
         if header == Comm_msgs.GHEAD.name:
-            # Returns all the headers that this node has
-            # FIXME(Fernando): Configure this depending on the message type
-            headers = self.dbl.get_header_list(filter_latest=True)
-            rospy.logdebug(f"{self.this_robot} - Channel - Sending {len(headers)} headers")
+            # ------------------------------------------------------------------
+            # Build the header list to advertise to the peer.
+            #
+            # self.latest_topic_ids is None  → legacy: filter_latest=True
+            # self.latest_topic_ids is a set → per-topic control:
+            #     topic IDs in the set   → LAST_MESSAGE (only newest header)
+            #     topic IDs not in set   → WHOLE_HISTORY (all headers)
+            # ------------------------------------------------------------------
+            if self.latest_topic_ids is None:
+                # Legacy fallback: treat every topic as LAST_MESSAGE
+                headers = self.dbl.get_header_list(filter_latest=True)
+            else:
+                # Per-topic: pass the set of LAST_MESSAGE topic IDs.
+                # get_header_list() will use WHOLE_HISTORY for topics not in the set.
+                headers = self.dbl.get_header_list(
+                    filter_latest=None,
+                    latest_topic_ids=self.latest_topic_ids
+                )
+
+            rospy.logdebug(
+                f"{self.this_robot} - Channel - Sending {len(headers)} headers"
+            )
             rospy.logdebug(f"{self.this_robot} - Channel - {headers}")
             serialized = du.serialize_headers(headers)
             return serialized
+
         if header == Comm_msgs.GDATA.name:
             r_header = data
             # Returns a packed data for the requires header
@@ -457,6 +555,7 @@ class Channel():
             except Exception:
                 rospy.logerr(f"{self.this_robot} - Header not found: {r_header}")
                 return Comm_msgs.SERRM.name.encode()
+
         if header == Comm_msgs.DENDT.name:
             target = data
             if target.decode() != self.target_robot:
@@ -465,4 +564,5 @@ class Channel():
                              f"My target: {self.target_robot}")
             self.server_sync_complete_pub.publish(Time(rospy.get_rostime()))
             return "Ack".encode()
+
         return Comm_msgs.SERRM.name.encode()

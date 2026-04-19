@@ -107,8 +107,10 @@ class IntegrateDatabase:
             # Start communication channel
             channel = sync.Channel(self.DBServer.dbl,
                                    self.this_robot,
-                                   other_robot, self.robot_configs,
-                                   self.client_timeout)
+                                   other_robot, 
+                                   self.robot_configs,
+                                   self.client_timeout,
+                                   topic_configs=self.topic_configs)
             self.all_channels.append(channel)
             channel.run()
 

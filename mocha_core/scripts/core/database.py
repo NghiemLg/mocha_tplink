@@ -107,45 +107,90 @@ class DBwLock():
         self.lock.release()
         return dbm.header
 
-    def get_header_list(self, filter_robot_id=None, filter_latest=None):
-        """ Returns a list with all the headers of the db. The results are
-        filtered for a specific robot, or *after* a specific timestamp if
-        these fields are available.  To filter by timestamp,
-        you should specify a robot. Timestamps are recorded in the robot
-        frame (i.e. each robot has different timestamps, so it does not make
-        sense to filter by a global timestamp) """
+    def get_header_list(self, filter_robot_id=None, filter_latest=None,
+                        latest_topic_ids=None):
+        """Returns a list of headers from the DB, sorted by (priority, ts, header).
+
+        Args:
+            filter_robot_id (int, optional): If set, only include messages from
+                this robot ID.
+            filter_latest (bool, optional):
+                - True  → return only the single latest header per (robot, topic).
+                  This is the legacy behaviour, equivalent to LAST_MESSAGE for all
+                  topics.
+                - False → return ALL headers for every (robot, topic).
+                  This is the correct behaviour for WHOLE_HISTORY topics.
+                - None  → use per-topic control via `latest_topic_ids` (see below).
+            latest_topic_ids (set of int, optional): Only meaningful when
+                filter_latest is None.  Topic IDs listed here will be treated as
+                LAST_MESSAGE (return only the newest header); all other topic IDs
+                will be treated as WHOLE_HISTORY (return all headers).
+                If both filter_latest and latest_topic_ids are None, the method
+                falls back to returning ALL headers (filter_latest=False behaviour).
+
+        Returns:
+            list[bytes]: Sorted list of header bytes, highest priority/newest first.
+        """
         if filter_robot_id is not None:
             assert isinstance(filter_robot_id, int)
         if filter_latest is not None:
             assert isinstance(filter_latest, bool)
+        if latest_topic_ids is not None:
+            assert isinstance(latest_topic_ids, (set, frozenset, list))
+            latest_topic_ids = set(latest_topic_ids)
 
-        # Header list is a dict with the headers as keys and the priorities as
-        # values
+        # header_list maps header (bytes) → {'prio': int, 'ts': rospy.Time}
         header_list = {}
 
-        # To avoid inconsistencies, the db is locked while searching
         self.lock.acquire()
         for robot_id in self.db:
             if filter_robot_id is not None and robot_id != filter_robot_id:
                 continue
+
             for topic in self.db[robot_id]:
-                if filter_latest:
-                    latest_msg_ts = rospy.Time(1, 0)
+                # -------------------------------------------------------
+                # Decide whether this topic uses LAST_MESSAGE or WHOLE_HISTORY
+                # -------------------------------------------------------
+                if filter_latest is True:
+                    # Legacy: all topics → only newest header
+                    topic_filter_latest = True
+                elif filter_latest is False:
+                    # Explicit: all topics → all headers
+                    topic_filter_latest = False
+                else:
+                    # Per-topic control via latest_topic_ids set
+                    if latest_topic_ids is not None:
+                        topic_filter_latest = (topic in latest_topic_ids)
+                    else:
+                        # Default fallback: return all headers
+                        topic_filter_latest = False
+
+                if topic_filter_latest:
+                    # LAST_MESSAGE: keep track of only the newest message
+                    latest_msg_ts = rospy.Time(0, 0)
                     latest_msg = None
-                for header in self.db[robot_id][topic]:
-                    msg_content = self.db[robot_id][topic][header]
-                    if filter_latest and msg_content.ts > latest_msg_ts:
-                        latest_msg_ts = msg_content.ts
-                        latest_msg = msg_content
-                    if not filter_latest:
-                        header_list[header] = {'prio': msg_content.priority,
-                                               'ts': msg_content.ts}
-                if filter_latest:
-                    header_list[latest_msg.header] = {'prio': latest_msg.priority,
-                                                      'ts': latest_msg.ts}
+                    for header in self.db[robot_id][topic]:
+                        msg_content = self.db[robot_id][topic][header]
+                        if msg_content.ts > latest_msg_ts:
+                            latest_msg_ts = msg_content.ts
+                            latest_msg = msg_content
+                    if latest_msg is not None:
+                        header_list[latest_msg.header] = {
+                            'prio': latest_msg.priority,
+                            'ts': latest_msg.ts
+                        }
+                else:
+                    # WHOLE_HISTORY: include every header for this topic
+                    for header in self.db[robot_id][topic]:
+                        msg_content = self.db[robot_id][topic][header]
+                        header_list[header] = {
+                            'prio': msg_content.priority,
+                            'ts': msg_content.ts
+                        }
+
         self.lock.release()
 
-        # Sort the dictionary by value, and get the keys
+        # Sort by (priority DESC, timestamp DESC, header DESC) for determinism
         sorted_tuples = sorted(header_list.items(),
                                key=lambda kv: (kv[1]['prio'], kv[1]['ts'], kv[0]),
                                reverse=True)

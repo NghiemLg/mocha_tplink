@@ -22,8 +22,6 @@ ground_robot:
 
 
 aerial_robot:
-  # Iris - Realsense Depth + Mavros (dùng cho EDEN planner)
-
 
   - msg_topic: "/tf"
     msg_type: "tf2_msgs/TFMessage"

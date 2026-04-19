@@ -1,114 +1,65 @@
 #!/usr/bin/env python3
-"""
-Python 3 script to get RSSI (signal strength) and SNR of the connected Wi-Fi Access Point (AP/router).
-Works on Linux (most common for this). Zero external dependencies — only stdlib + subprocess.
-Tested patterns for both modern (iw) and classic (iwconfig) tools.
-"""
-
 import subprocess
 import re
 import os
-from typing import Dict, Optional
+from typing import Dict
 
 
-def get_wifi_rssi_snr() -> Dict:
+def get_wifi_info() -> Dict[str, str]:
     """
-    Returns RSSI (dBm), Noise (dBm), SNR (dB) and AP info for the currently connected Wi-Fi.
-    Automatically detects the first wireless interface.
+    Trả về:
+    {
+        "interface": str,
+        "ssid": str,
+        "rssi_dbm": str
+    }
+    hoặc {"error": "..."}
     """
-    # ── 1. Auto-detect wireless interface (wlan*, wl*, wlp*, etc.)
+
     try:
-        ifaces = [
+        # 1. tìm interface wifi (wl*)
+        interface = next(
             iface for iface in os.listdir("/sys/class/net")
-            if any(k in iface.lower() for k in ("wlan", "wl", "wifi", "wlp"))
-        ]
-        if not ifaces:
-            return {"error": "No wireless interface found on this system."}
-        interface = ifaces[0]          # take the first one (usually the active one)
-    except Exception:
-        interface = "wlan0"            # fallback
+            if iface.startswith("wl")
+        )
+    except StopIteration:
+        return {"error": "No Wi-Fi interface found"}
 
-    # ── 2. Try iwconfig first (gives both RSSI + Noise → SNR)
     try:
+        # 2. gọi iw
         output = subprocess.check_output(
-            ["iwconfig", interface],
-            text=True,
-            stderr=subprocess.DEVNULL
+            ["iw", "dev", interface, "link"],
+            text=True
         )
 
-        # Parse AP name (SSID)
-        ssid_match = re.search(r'ESSID:"(.*?)"', output)
-        ssid = ssid_match.group(1) if ssid_match else "Unknown AP"
+        # 3. parse
+        ssid_match = re.search(r"SSID:\s*(.+)", output)
+        rssi_match = re.search(r"signal:\s*(-?\d+)\s*dBm", output)
 
-        # Parse RSSI (Signal level)
-        rssi_match = re.search(r'Signal level\s*=\s*(-?\d+)\s*dBm', output, re.IGNORECASE)
-        rssi = int(rssi_match.group(1)) if rssi_match else None
-
-        # Parse Noise level
-        noise_match = re.search(r'Noise level\s*=\s*(-?\d+)\s*dBm', output, re.IGNORECASE)
-        noise = int(noise_match.group(1)) if noise_match else None
-
-        snr = rssi - noise if rssi is not None and noise is not None else None
+        if not ssid_match or not rssi_match:
+            return {"error": "Not connected to any AP"}
 
         return {
             "interface": interface,
-            "ssid": ssid,               # name of the Access Point
-            "rssi_dbm": rssi,
-            "noise_dbm": noise,
-            "snr_db": snr,
-            "method": "iwconfig",
-            "raw": output.strip()
+            "ssid": ssid_match.group(1).strip(),
+            "rssi_dbm": rssi_match.group(1)
         }
-
-    except (subprocess.CalledProcessError, FileNotFoundError):
-        # ── 3. Fallback to modern "iw" tool (only RSSI, no Noise/SNR)
-        try:
-            output = subprocess.check_output(
-                ["iw", "dev", interface, "link"],
-                text=True,
-                stderr=subprocess.DEVNULL
-            )
-
-            ssid_match = re.search(r'SSID:\s*(.+)', output)
-            ssid = ssid_match.group(1).strip() if ssid_match else "Unknown AP"
-
-            rssi_match = re.search(r'signal:\s*(-?\d+)\s*dBm', output)
-            rssi = int(rssi_match.group(1)) if rssi_match else None
-
-            return {
-                "interface": interface,
-                "ssid": ssid,
-                "rssi_dbm": rssi,
-                "noise_dbm": None,
-                "snr_db": None,          # iw link does not expose noise
-                "method": "iw",
-                "raw": output.strip()
-            }
-        except Exception as e:
-            return {"error": f"Could not read Wi-Fi info: {e}"}
 
     except Exception as e:
         return {"error": str(e)}
 
 
-if __name__ == "__main__":
-    info = get_wifi_rssi_snr()
+def main():
+    info = get_wifi_info()
 
     if "error" in info:
-        print(" Error:", info["error"])
-        print("\nTips:")
-        print("   • Install tools if missing:  sudo apt install wireless-tools iw")
-        print("   • Make sure Wi-Fi is connected")
-        print("   • Run as normal user (no sudo needed)")
-    else:
-        print(" Connected Access Point (AP)")
-        print(f"   Interface : {info['interface']}")
-        print(f"   AP Name   : {info['ssid']}")
-        print(f"   RSSI      : {info['rssi_dbm']} dBm")
-        if info["snr_db"] is not None:
-            print(f"   Noise     : {info['noise_dbm']} dBm")
-            print(f"   SNR       : {info['snr_db']} dB")
-        else:
-            print("   SNR       : Not available with current tool (iwconfig gives best SNR)")
-        print("\nRaw output for debugging:")
-        print(info["raw"])
+        print("Error:", info["error"])
+        return
+
+    print(f"Interface : {info['interface']}")
+    print(f"AP Name   : {info['ssid']}")
+    print(f"RSSI      : {info['rssi_dbm']} dBm")
+
+
+if __name__ == "__main__":
+    main()

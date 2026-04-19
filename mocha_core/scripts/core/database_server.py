@@ -16,7 +16,7 @@ class DatabaseServer:
     Please see the list of services in the srv folder
     """
     def __init__(self, robot_configs, topic_configs):
-        # Check input topics
+        # Check input topics 
         assert isinstance(robot_configs, dict)
         assert isinstance(topic_configs, dict)
 
