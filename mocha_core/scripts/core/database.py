@@ -167,7 +167,7 @@ class DBwLock():
 
                 if topic_filter_latest:
                     # LAST_MESSAGE: keep track of only the newest message
-                    latest_msg_ts = rospy.Time(0, 0)
+                    latest_msg_ts = rospy.Time(1, 0)
                     latest_msg = None
                     for header in self.db[robot_id][topic]:
                         msg_content = self.db[robot_id][topic][header]

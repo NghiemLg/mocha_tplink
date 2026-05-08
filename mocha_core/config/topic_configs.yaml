@@ -1,9 +1,14 @@
 ground_robot:
-  # Jackal - LiDAR + Odometry + TF (dùng cho LRAE planner)
-  - msg_topic: "/mid/points"
+
+  # - msg_topic: "/mid/points" # local map , Subscribe keyframe (từ DB sau khi sync).Merge keyframe mới vào map local hiện tại. Publish map local đã merge vào /local_map (LAST_MESSAGE).
+  #   msg_type: "sensor_msgs/PointCloud2"
+  #   msg_priority: "NO_PRIORITY"
+  #   msg_history: "LAST_MESSAGE"
+
+  - msg_topic: "lidar_keyframes"  # the changing of every waypoint 
     msg_type: "sensor_msgs/PointCloud2"
-    msg_priority: "NO_PRIORITY"
-    msg_history: "LAST_MESSAGE"
+    msg_priority: "HIGH_PRIORITY"
+    msg_history: "WHOLE_HISTORY"
 
   - msg_topic: "/odometry/filtered"
     msg_type: "nav_msgs/Odometry"
@@ -38,10 +43,16 @@ aerial_robot:
     msg_priority: "HIGH_PRIORITY"
     msg_history: "LAST_MESSAGE"
 
-  - msg_topic: "/velodyne_points"
+  # use this topic if transmit full map , if only transmit keyframe, use topic "lidar_keyframes" 
+  # - msg_topic: "/velodyne_points" 
+  #   msg_type: "sensor_msgs/PointCloud2"
+  #   msg_priority: "NO_PRIORITY"
+  #   msg_history: "LAST_MESSAGE"
+
+  - msg_topic: "lidar_keyframes"  
     msg_type: "sensor_msgs/PointCloud2"
-    msg_priority: "NO_PRIORITY"
-    msg_history: "LAST_MESSAGE"
+    msg_priority: "HIGH_PRIORITY"
+    msg_history: "WHOLE_HISTORY"
 
 
 
