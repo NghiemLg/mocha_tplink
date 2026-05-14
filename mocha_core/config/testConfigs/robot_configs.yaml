@@ -4,36 +4,24 @@ basestation:
   using-radio: "brick-1"
   base-port: "1234"
   clients:
-    - "charon"
-    - "styx"
-    - "quad1"
+    - "none_iris"
+    - "jackal"
 
-charon:
+
+jackal:
   node-type: "ground_robot"
-  IP-address: "127.0.0.1"
-  using-radio: "black-1"
+  IP-address: "127.0.0.1"          
+  using-radio: "radio_ugv"
   base-port: "2234"
   clients:
+    - "none_iris"
     - "basestation"
-    - "styx"
-    - "quad1"
 
-styx:
-  node-type: "ground_robot"
-  IP-address: "127.0.0.1"
-  using-radio: "black-2"
-  base-port: "3234"
-  clients:
-    - "basestation"
-    - "charon"
-
-
-quad1:
+none_iris:
   node-type: "aerial_robot"
   IP-address: "127.0.0.1"
-  using-radio: "blue-1"
-  base-port: "4234"
+  using-radio: "radio_uav"
+  base-port: "6234"
   clients:
+    - "jackal"
     - "basestation"
-    - "charon"
-    - "quad1"

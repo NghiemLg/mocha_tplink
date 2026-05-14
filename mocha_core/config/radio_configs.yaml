@@ -1,11 +1,40 @@
+#real hardware ---------------------------------------------------------
+# radio_base:
+#         MAC-address: ["04:f0:21:38:cf:5b"]
+#         computed-IP-address: "10.229.221.1"
+
+# radio_ugv:
+#         MAC-address: ["04:f0:21:38:d3:be"]
+#         computed-IP-address: "10.229.222.1"
+    
+# radio_uav:
+#         MAC-address: ["cc:2d:e0:9b:3e:aa"]
+#         computed-IP-address: "10.249.171.1"
+
+# simulation one IP ------------------------------------------------------------
+# radio_base:
+#         MAC-address: ["00:00:00:00:00:01"]
+#         computed-IP-address: "127.0.0.1"
+
+# radio_ugv:
+#         MAC-address: ["00:00:00:00:00:02"]
+#         computed-IP-address: "127.0.0.1"
+
+# radio_uav:
+#         MAC-address: ["00:00:00:00:00:03"]
+#         computed-IP-address: "127.0.0.1"
+# semi realistic simulation, use virtual IP near with real hardware -------------------------------------
+# sudo ip addr add 10.229.221.1/24 dev lo
+# sudo ip addr add 10.229.222.1/24 dev lo
+# sudo ip addr add 10.249.171.1/24 dev lo
 radio_base:
-        MAC-address: ["04:f0:21:38:cf:5b"]
+        MAC-address: ["00:00:00:00:00:01"]
         computed-IP-address: "10.229.221.1"
 
 radio_ugv:
-        MAC-address: ["04:f0:21:38:d3:be"]
+        MAC-address: ["00:00:00:00:00:02"]
         computed-IP-address: "10.229.222.1"
-    
+
 radio_uav:
-        MAC-address: ["cc:2d:e0:9b:3e:aa"]
+        MAC-address: ["00:00:00:00:00:03"]
         computed-IP-address: "10.249.171.1"

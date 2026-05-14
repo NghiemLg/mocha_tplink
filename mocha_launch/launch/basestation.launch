@@ -10,6 +10,6 @@
   <include file="$(find mocha_core)/launch/database_translators_publishers.launch" pass_all_args="True"/>
 
   <!-- Launch tplink interface -->
-  <!-- <include file="$(find interface_tplink)/launch/tplink_nodes.launch" pass_all_args="True"/> -->
+  <include file="$(find interface_tplink)/launch/tplink_nodes.launch" pass_all_args="True"/>
 
 </launch>

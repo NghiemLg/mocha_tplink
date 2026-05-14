@@ -1,24 +1,60 @@
 ground_robot:
-  - msg_topic: "/odometry"
-    msg_type: "nav_msgs/Odometry"
-    msg_priority: "NO_PRIORITY"
-    msg_history: "LAST_MESSAGE"
 
-  - msg_topic: "/pose"
-    msg_type: "geometry_msgs/PointStamped"
-    msg_priority: "NO_PRIORITY"
+  # - msg_topic: "/mid/points" # local map , Subscribe keyframe (từ DB sau khi sync).Merge keyframe mới vào map local hiện tại. Publish map local đã merge vào /local_map (LAST_MESSAGE).
+  #   msg_type: "sensor_msgs/PointCloud2"
+  #   msg_priority: "NO_PRIORITY"
+  #   msg_history: "LAST_MESSAGE"
+
+  - msg_topic: "lidar_keyframes"  # the changing of every waypoint 
+    msg_type: "sensor_msgs/PointCloud2"
+    msg_priority: "HIGH_PRIORITY"
     msg_history: "WHOLE_HISTORY"
 
-aerial_robot:
-  - msg_topic: "/image"
-    msg_type: "sensor_msgs/Image"
+  - msg_topic: "/odometry/filtered"
+    msg_type: "nav_msgs/Odometry"
     msg_priority: "HIGH_PRIORITY"
     msg_history: "LAST_MESSAGE"
 
-  - msg_topic: "/pose"
-    msg_type: "geometry_msgs/PointStamped"
-    msg_priority: "NO_PRIORITY"
+  - msg_topic: "/tf"
+    msg_type: "tf2_msgs/TFMessage"
+    msg_priority: "HIGH_PRIORITY"
     msg_history: "LAST_MESSAGE"
+
+  - msg_topic: "/tf_static"
+    msg_type: "tf2_msgs/TFMessage"
+    msg_priority: "HIGH_PRIORITY"
+    msg_history: "LAST_MESSAGE"
+
+
+aerial_robot:
+
+  - msg_topic: "/tf"
+    msg_type: "tf2_msgs/TFMessage"
+    msg_priority: "HIGH_PRIORITY"
+    msg_history: "LAST_MESSAGE"
+
+  - msg_topic: "/tf_static"
+    msg_type: "tf2_msgs/TFMessage"
+    msg_priority: "HIGH_PRIORITY"
+    msg_history: "LAST_MESSAGE"
+
+  - msg_topic: "/mavros/imu/data"
+    msg_type: "sensor_msgs/Imu"
+    msg_priority: "HIGH_PRIORITY"
+    msg_history: "LAST_MESSAGE"
+
+  # use this topic if transmit full map , if only transmit keyframe, use topic "lidar_keyframes" 
+  # - msg_topic: "/velodyne_points" 
+  #   msg_type: "sensor_msgs/PointCloud2"
+  #   msg_priority: "NO_PRIORITY"
+  #   msg_history: "LAST_MESSAGE"
+
+  - msg_topic: "lidar_keyframes"  
+    msg_type: "sensor_msgs/PointCloud2"
+    msg_priority: "HIGH_PRIORITY"
+    msg_history: "WHOLE_HISTORY"
+
+
 
 base_station:
   - msg_topic: "/target_goals"

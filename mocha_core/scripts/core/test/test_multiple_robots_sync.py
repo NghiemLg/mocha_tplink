@@ -19,7 +19,7 @@ class test(unittest.TestCase):
         test_name = self._testMethodName
         print("\n", Fore.RED, 20*"=", test_name, 20*"=", Style.RESET_ALL)
 
-     def test_multi_robot_sync(self):
+    def test_multi_robot_sync(self):
         self.maxDiff=None
 
         db_gs = sdb.get_sample_dbl()

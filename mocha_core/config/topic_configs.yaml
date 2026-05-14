@@ -5,43 +5,42 @@ ground_robot:
   #   msg_priority: "NO_PRIORITY"
   #   msg_history: "LAST_MESSAGE"
 
-  - msg_topic: "lidar_keyframes"  # the changing of every waypoint 
-    msg_type: "sensor_msgs/PointCloud2"
+  # - msg_topic: "/vae_encoder/output/latent_vector"  # the changing of every waypoint 
+  #   msg_type: "sensor_msgs/PointCloud2"
+  #   msg_priority: "HIGH_PRIORITY"
+  #   msg_history: "WHOLE_HISTORY"
+
+  # - msg_topic: "/lio/odom"
+  #   msg_type: "nav_msgs/Odometry"
+  #   msg_priority: "HIGH_PRIORITY"
+  #   msg_history: "LAST_MESSAGE"
+  # Transmit one compact VAE keyframe instead of separate odom + latent topics.
+  # Local publisher should publish super_lio_lamp_adapter/KeyframeVae on /keyframe_vae.
+  # Remote topic_publisher republishes it as /<robot_name>/keyframe_vae.
+  - msg_topic: "/keyframe_vae"
+    msg_type: "super_lio_lamp_adapter/KeyframeVae"
     msg_priority: "HIGH_PRIORITY"
     msg_history: "WHOLE_HISTORY"
 
-  - msg_topic: "/odometry/filtered"
-    msg_type: "nav_msgs/Odometry"
-    msg_priority: "HIGH_PRIORITY"
-    msg_history: "LAST_MESSAGE"
-
-  - msg_topic: "/tf"
-    msg_type: "tf2_msgs/TFMessage"
-    msg_priority: "HIGH_PRIORITY"
-    msg_history: "LAST_MESSAGE"
-
-  - msg_topic: "/tf_static"
-    msg_type: "tf2_msgs/TFMessage"
-    msg_priority: "HIGH_PRIORITY"
-    msg_history: "LAST_MESSAGE"
 
 
 aerial_robot:
-
-  - msg_topic: "/tf"
-    msg_type: "tf2_msgs/TFMessage"
+  # Transmit one compact VAE keyframe instead of separate odom + latent topics.
+  - msg_topic: "/keyframe_vae"
+    msg_type: "super_lio_lamp_adapter/KeyframeVae"
     msg_priority: "HIGH_PRIORITY"
-    msg_history: "LAST_MESSAGE"
+    msg_history: "WHOLE_HISTORY"
 
-  - msg_topic: "/tf_static"
-    msg_type: "tf2_msgs/TFMessage"
-    msg_priority: "HIGH_PRIORITY"
-    msg_history: "LAST_MESSAGE"
+  # - msg_topic: "/vae_encoder/output/latent_vector"  # the changing of every waypoint 
+  #   msg_type: "sensor_msgs/PointCloud2"
+  #   msg_priority: "HIGH_PRIORITY"
+  #   msg_history: "WHOLE_HISTORY"
 
-  - msg_topic: "/mavros/imu/data"
-    msg_type: "sensor_msgs/Imu"
-    msg_priority: "HIGH_PRIORITY"
-    msg_history: "LAST_MESSAGE"
+  # - msg_topic: "/lio/odom"
+  #   msg_type: "nav_msgs/Odometry"
+  #   msg_priority: "HIGH_PRIORITY"
+  #   msg_history: "WHOLE_HISTORY"
+  
 
   # use this topic if transmit full map , if only transmit keyframe, use topic "lidar_keyframes" 
   # - msg_topic: "/velodyne_points" 
@@ -49,14 +48,14 @@ aerial_robot:
   #   msg_priority: "NO_PRIORITY"
   #   msg_history: "LAST_MESSAGE"
 
-  - msg_topic: "lidar_keyframes"  
-    msg_type: "sensor_msgs/PointCloud2"
-    msg_priority: "HIGH_PRIORITY"
-    msg_history: "WHOLE_HISTORY"
-
 
 
 base_station:
+  - msg_topic: "/keyframe_vae"
+    msg_type: "super_lio_lamp_adapter/KeyframeVae"
+    msg_priority: "HIGH_PRIORITY"
+    msg_history: "WHOLE_HISTORY"
+
   - msg_topic: "/target_goals"
     msg_type: "geometry_msgs/PoseArray"
     msg_priority: "HIGH_PRIORITY"

@@ -1,16 +1,45 @@
+# real hardware ---------------------------------------------------------
+# basestation:
+#   node-type: "base_station"
+#   IP-address: "10.10.10.100"
+#   using-radio: "radio_base"
+#   base-port: "1234"
+#   clients:
+#     - "jackal"
+#     - "none_iris"
+
+
+# jackal:
+#   node-type: "ground_robot"
+#   IP-address: "10.10.10.101"          
+#   using-radio: "radio_ugv"
+#   base-port: "2234"
+#   clients:
+#     - "none_iris"
+#     - "basestation"
+
+# none_iris:
+#   node-type: "aerial_robot"
+#   IP-address: "10.10.10.102"
+#   using-radio: "radio_uav"
+#   base-port: "6234"
+#   clients:
+#     - "jackal"
+#     - "basestation"
+
+# simulation ------------------------------------------------------------
 basestation:
   node-type: "base_station"
-  IP-address: "10.10.10.100"
+  IP-address: "10.229.221.1"
   using-radio: "radio_base"
   base-port: "1234"
   clients:
     - "jackal"
     - "none_iris"
 
-
 jackal:
   node-type: "ground_robot"
-  IP-address: "10.10.10.101"          
+  IP-address: "10.229.222.1"
   using-radio: "radio_ugv"
   base-port: "2234"
   clients:
@@ -19,7 +48,7 @@ jackal:
 
 none_iris:
   node-type: "aerial_robot"
-  IP-address: "10.10.10.102"
+  IP-address: "10.249.171.1"
   using-radio: "radio_uav"
   base-port: "6234"
   clients:
